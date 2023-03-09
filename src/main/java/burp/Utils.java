@@ -1,12 +1,9 @@
 package burp;
 
-import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
-
-import static burp.IRequestInfo.CONTENT_TYPE_MULTIPART;
 
 /**
  * Project: fakeIP
@@ -91,6 +88,22 @@ public class Utils {
         int index = random.nextInt(10);
         String ip = num2ip(range[index][0] + new SecureRandom().nextInt(range[index][1] - range[index][0]));
         return ip;
+    }
+
+    public static String getLocalRandomIp() {
+        int[] rangeStart = {127, 0, 0, 1};
+        int[] rangeEnd = {127, 254, 254, 254};
+
+        Random random = new Random();
+        int[] ip = new int[4];
+        for (int i = 0; i < 4; i++) {
+            if (i == 3) {
+                ip[i] = random.nextInt(rangeEnd[i] - rangeStart[i]) + rangeStart[i] + 1;
+            } else {
+                ip[i] = random.nextInt(rangeEnd[i] - rangeStart[i] + 1) + rangeStart[i];
+            }
+        }
+        return String.format("%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
     }
 
     public static String num2ip(int ip) {

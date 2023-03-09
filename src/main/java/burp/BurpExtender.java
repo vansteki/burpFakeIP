@@ -16,7 +16,7 @@ import java.util.List;
  * Github:https://github.com/TheKingOfDuck
  * When I wirting my code, only God and I know what it does. After a while, only God knows.
  */
-public class BurpExtender implements IBurpExtender, IContextMenuFactory, IIntruderPayloadGeneratorFactory, IIntruderPayloadGenerator, IHttpListener {
+public class BurpExtender implements IBurpExtender, IContextMenuFactory, IIntruderPayloadGeneratorFactory, IIntruderPayloadGenerator, IHttpListener, IProxyListener {
     public static IExtensionHelpers helpers;
     private String PLUGIN_NAME = "burpFakeIP";
     private String VERSION = "1.1";
@@ -41,6 +41,7 @@ public class BurpExtender implements IBurpExtender, IContextMenuFactory, IIntrud
         callbacks.registerIntruderPayloadGeneratorFactory(this);
         callbacks.setExtensionName(PLUGIN_NAME);
         callbacks.registerHttpListener(this);
+        callbacks.registerProxyListener(this);
 
     }
 
@@ -140,12 +141,26 @@ public class BurpExtender implements IBurpExtender, IContextMenuFactory, IIntrud
 
     @Override
     public void processHttpMessage(int i, boolean b, IHttpRequestResponse iHttpRequestResponse) {
+
         if (b && Config.AUTOXFF_STAT) {
             if (Config.AUTOXFF_VALUE.equals("$RandomIp$")) {
                 Utils.addfakeip(iHttpRequestResponse, Utils.getRandomIp());
             } else {
                 Utils.addfakeip(iHttpRequestResponse, Config.AUTOXFF_VALUE);
             }
+        }
+    }
+
+    public void processProxyMessage(boolean messageIsRequest, IInterceptedProxyMessage message) {
+        if (messageIsRequest) {
+            IRequestInfo requestInfo = helpers.analyzeRequest(message.getMessageInfo());
+            List<String> headers = requestInfo.getHeaders();
+//            headers.add("X-Forwarded-For: 1.1.1.1");
+            headers.add(String.format("%s: %s", Config.AUTOXFF_KEY, Utils.getLocalRandomIp()));
+
+            byte[] newRequest = helpers.buildHttpMessage(headers, null);
+            message.getMessageInfo().setRequest(newRequest);
+
         }
     }
 }
